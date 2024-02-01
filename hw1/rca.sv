@@ -23,7 +23,7 @@ module fulladder(input wire  cin,
                  output wire s,
                  output wire cout);
    wire s_tmp, cout_tmp1, cout_tmp2;
-   halfadder h0(.a(a), .b(b), .s(cout), .cout(cout_tmp1));
+   halfadder h0(.a(a), .b(b), .s(s_temp), .cout(cout_tmp1));
    halfadder h1(.a(s_tmp), .b(cin), .s(s), .cout(cout_tmp2));
    assign cout = cout_tmp1 | cout_tmp2;
 endmodule
