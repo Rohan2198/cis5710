@@ -23,7 +23,7 @@ module fulladder(input wire  cin,
                  output wire s,
                  output wire cout);
    wire s_tmp, cout_tmp1, cout_tmp2;
-   halfadder h0(.a(a), .b(b), .s(s_temp), .cout(cout_tmp1));
+   halfadder h0(.a(a), .b(b), .s(s_tmp), .cout(cout_tmp1));
    halfadder h1(.a(s_tmp), .b(cin), .s(s), .cout(cout_tmp2));
    assign cout = cout_tmp1 | cout_tmp2;
 endmodule
@@ -49,7 +49,8 @@ module rca4(
     output wire [7:0] LED
 );
    wire [1:0] cout0;
+   wire x;
    fulladder2 a0(.cin(1'b0), .a(SWITCH[1:0]), .b(SWITCH[5:4]), .s(LED[1:0]), .cout(cout0[0]));
-   fulladder2 a1(.cin(cout0[0]), .a(SWITCH[3:1]), .b(SWITCH[7:6]), .s(LED[3:2]), .cout(LED[4]));
+  fulladder2 a1(.cin(cout0[0]), .a(SWITCH[3:2]), .b(SWITCH[7:6]), .s(LED[3:2]), .cout(x));
    assign LED[7:4] = 4'b0;
 endmodule
