@@ -47,8 +47,7 @@ module divider_unsigned (
     
     genvar i;
     always_comb begin
-	
-         for (i = 0; i < 32; i = i + 1) begin 
+        for (i = 0; i < 32; i = i + 1) begin 
             divu_1iter d (
                 .i_dividend(i_dividend),
                 .i_divisor(i_divisor),
@@ -58,15 +57,13 @@ module divider_unsigned (
                 .o_remainder(remainder),
                 .o_quotient(quotient)
             );
-		
-        
-i_dividend = dividend;
-i_remainder = remainder;
-i_quotient = quotient;
-end
-end
-assign o_remainder = remainder;
-assign o_quotient = quotient;
+            i_dividend = dividend;
+            i_remainder = remainder;
+            i_quotient = quotient;
+        end
+    end
 
+    assign o_remainder = remainder;
+    assign o_quotient = quotient;
 
 endmodule
