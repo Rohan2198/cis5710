@@ -29,6 +29,7 @@ module divu_1iter (
     assign o_quotient = (x) ? {i_quotient[30:0], 1'b0} : {i_quotient[30:0], 1'b1}; 
     assign o_remainder = (x) ? m_remainder3 : (m_remainder3 - i_divisor);
     assign o_dividend = {i_dividend[30:0], 1'b0};
+
 endmodule
 
 module divider_unsigned (
@@ -38,28 +39,26 @@ module divider_unsigned (
     output wire [31:0] o_quotient
 );
 
-    wire [31:0] i_remainder;
-    wire [31:0] i_quotient ;
-    wire [31:0] remainder;
-    wire [31:0] quotient ;
-    wire [31:0] dividend ;   
+    wire [31:0] remainder [32:0];
+    wire [31:0] quotient [32:0] ;
+    wire [31:0] dividend [32:0];   
     
     genvar i;
-
+always_comb begin
         for (i = 0; i < 32; i = i + 1) begin 
             divu_1iter d (
-                .i_dividend(i_dividend),
+                .i_dividend(dividend[i]),
                 .i_divisor(i_divisor),
-                .i_remainder(i_remainder),
-                .i_quotient(i_quotient),
-                .o_dividend(dividend),
-                .o_remainder(remainder),
-                .o_quotient(quotient)
+                .i_remainder(remainder[i]),
+                .i_quotient(quotient[i]),
+                .o_dividend(dividend[i+1]),
+                .o_remainder(remainder[i+1]),
+                .o_quotient(quotient[i+1])
             );
-        
+        end
    end
 
-    assign o_remainder = remainder;
-    assign o_quotient = quotient;
+    assign o_remainder = remainder[32];
+    assign o_quotient = quotient[32];
 
 endmodule
