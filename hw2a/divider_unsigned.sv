@@ -11,7 +11,9 @@ module divider_unsigned (
     output wire [31:0] o_quotient
 );
     genvar i;
-    wire [31:0] i_remainder, wire [31:0] i_quotient, wire [31:0] o_dividend;
+    wire [31:0] i_remainder;
+    wire [31:0] i_quotient; 
+    wire [31:0] o_dividend;
         for(i =0; i<32; i = i+1)begin
         divu_1iter d (.i_dividend(i_dividend),.i_divisor(i_divisor),i_remainder,
                         i_quotient,o_dividend,.o_remainder(o_remainder),.o_quotient(o_quotient));
@@ -30,12 +32,12 @@ module divu_1iter (
 );
     wire [31:0] m_remainder = 32'b0;
     always_comb begin
-        m_remainder = (i_remainder << 1) | ((i_dividend >> 31) & 0x1);
+        m_remainder = (i_remainder << 1) | ((i_dividend >> 31) & 1'b1);
         if (m_remainder < i_divisor) begin
             o_quotient = (i_quotient << 1);
         end
         else begin
-            o_quotient = (i_quotient << 1) | 0x1;
+            o_quotient = (i_quotient << 1) | 1'b1;
             o_remainder = m_remainder - i_divisor;
         end
         o_dividend = i_dividend << 1;
