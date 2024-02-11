@@ -10,15 +10,26 @@ module divider_unsigned (
     output wire [31:0] o_remainder,
     output wire [31:0] o_quotient
 );
-    genvar i;
     wire [31:0] i_remainder;
     wire [31:0] i_quotient; 
     wire [31:0] o_dividend;
-        for(i =0; i<32; i = i+1)begin
-        divu_1iter d (.i_dividend(i_dividend),.i_divisor(i_divisor),.i_remainder(i_remainder),
-                        .i_quotient(i_quotient),.o_dividend(o_dividend),.o_remainder(o_remainder),.o_quotient(o_quotient));
+    
+    genvar i;
+    generate
+        for (i = 0; i < 32; i = i + 1) begin : div_loop
+            divu_1iter d (
+                .i_dividend(i_dividend),
+                .i_divisor(i_divisor),
+                .i_remainder(i_remainder),
+                .i_quotient(i_quotient),
+                .o_dividend(o_dividend),
+                .o_remainder(o_remainder),
+                .o_quotient(o_quotient)
+            );
         end
+    endgenerate
 endmodule
+
 
 
 module divu_1iter (
