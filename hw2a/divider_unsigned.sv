@@ -30,17 +30,23 @@ module divu_1iter (
     output wire [31:0] o_remainder,
     output wire [31:0] o_quotient
 );
-    reg [31:0] m_remainder;
-    always_comb begin
-        m_remainder = (i_remainder << 1) | ((i_dividend >> 31) & 32'h1);
+    wire [31:0] m_remainder;
+    wire [31:0] m_reminder1;
+    wire [31:0] m_reminder3;
+    wire [31:0] m_reminder2;
+    wire x;
+        assign m_remainder = {i_remainder[30:0],1'b0};
+        assign m_remainder1 = {31'b0,i_dividend[31]};
+	assign m_remainder2 = m_remainder1 & {31b'0,1'b1};
+	assign m_reminder3 = m_remainder | m_remainder2;
         if (m_remainder < i_divisor) begin
-            assign o_quotient = (i_quotient << 1);
-	    assign o_remainder = m_remainder;
-        end
+            x = 1'b1;
+	end
         else begin
-            assign o_quotient = (i_quotient << 1) | 32'h1;
-            assign o_remainder = m_remainder - i_divisor;
-        end
+            x = 1'b0;
+	end
+	assign o_quotient = (x == 1'b1) ? {[30:0] i_quotient,1'b0} : {[30:0] i_quotient , 1'b1}; 
+	assign o_remainder = (x == 1'b1) ? m_remainder3 : (m_remainder3 - i_divisor);
+      
         assign o_dividend = i_dividend << 1;
-    end
 endmodule
