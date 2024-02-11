@@ -15,8 +15,8 @@ module divider_unsigned (
     wire [31:0] i_quotient; 
     wire [31:0] o_dividend;
         for(i =0; i<32; i = i+1)begin
-        divu_1iter d (.i_dividend(i_dividend),.i_divisor(i_divisor),i_remainder,
-                        i_quotient,o_dividend,.o_remainder(o_remainder),.o_quotient(o_quotient));
+        divu_1iter d (.i_dividend(i_dividend),.i_divisor(i_divisor),.i_remainder(i_remainder),
+                        .i_quotient(i_quotient),.o_dividend(o_dividend),.o_remainder(o_remainder),.o_quotient(o_quotient));
         end
 endmodule
 
@@ -41,14 +41,9 @@ module divu_1iter (
     assign m_remainder2 = m_remainder1 & {31'b0, 1'b1};
     assign m_remainder3 = m_remainder | m_remainder2;
 
-    always_comb begin
-        if (m_remainder < i_divisor)
-            x = 1'b1;
-        else
-            x = 1'b0;
-    end
+    assign x = (m_remainder3 < i_divisor);
 
-    assign o_quotient = (x == 1'b1) ? {i_quotient, 1'b0} : {i_quotient, 1'b1}; 
-    assign o_remainder = (x == 1'b1) ? m_remainder3 : (m_remainder3 - i_divisor);
-    assign o_dividend = i_dividend << 1;
+    assign o_quotient = (x) ? {i_quotient[30:0], 1'b0} : {i_quotient[30:0], 1'b1}; 
+    assign o_remainder = (x) ? m_remainder3 : (m_remainder3 - i_divisor);
+    assign o_dividend = {i_dividend[30:0], 1'b0};
 endmodule
