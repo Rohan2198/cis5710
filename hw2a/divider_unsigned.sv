@@ -40,13 +40,12 @@ module divider_unsigned (
 
     wire [31:0] i_remainder;
     wire [31:0] i_quotient ;
-
     wire [31:0] remainder;
     wire [31:0] quotient ;
     wire [31:0] dividend ;   
     
     genvar i;
-    always_comb begin
+
         for (i = 0; i < 32; i = i + 1) begin 
             divu_1iter d (
                 .i_dividend(i_dividend),
@@ -57,11 +56,8 @@ module divider_unsigned (
                 .o_remainder(remainder),
                 .o_quotient(quotient)
             );
-            i_dividend = dividend;
-            i_remainder = remainder;
-            i_quotient = quotient;
-        end
-    end
+        
+   end
 
     assign o_remainder = remainder;
     assign o_quotient = quotient;
