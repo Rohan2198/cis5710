@@ -39,12 +39,13 @@ module divider_unsigned (
     output wire [31:0] o_quotient
 );
 
-    wire [31:0] remainder [32:0];
-    wire [31:0] quotient [32:0] ;
-    wire [31:0] dividend [32:0];   
-    
+    wire [31:0] remainder [33];
+    wire [31:0] quotient [33] ;
+    wire [31:0] dividend [33];   
+    assign dividend [0] = i_dividend;
+    assign quotient [0] = 32'b0;
+    assign remainder [0] = 32'b0;
     genvar i;
-always_comb begin
         for (i = 0; i < 32; i = i + 1) begin 
             divu_1iter d (
                 .i_dividend(dividend[i]),
@@ -55,7 +56,7 @@ always_comb begin
                 .o_remainder(remainder[i+1]),
                 .o_quotient(quotient[i+1])
             );
-        end
+       
    end
 
     assign o_remainder = remainder[32];
