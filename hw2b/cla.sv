@@ -25,9 +25,7 @@ module gp4(input wire [3:0] gin, pin,
            input wire cin,
            output wire gout, pout,
            output wire [2:0] cout);
-
-           wire [3:0] g_mid;
-           wire [3:0] p_mid;
+           
            wire [2:0] C;
    // Compute individual generate and propagate signals for each bit
    genvar i;
@@ -37,7 +35,7 @@ module gp4(input wire [3:0] gin, pin,
 
    // Compute aggregate generate and propagate signals over the 4-bit window
            assign gout = g_mid[3] | (p_mid[3] & g_mid[2]) | (p_mid[2] & p_mid[1] & g_mid[1]) | (p_mid[2] & p_mid[1] & p_mid[0] & g_mid[0]) ; 
-           assign pout = |p_mid;
+           assign pout = &pin;
            wire [2:0] c; 
            assign c[0] = gin [0] | pin [0] & cin; 
            assign c[1] = gin [1] | pin [1] & gin [0] | pin [1] & pin [0] & cin; 
