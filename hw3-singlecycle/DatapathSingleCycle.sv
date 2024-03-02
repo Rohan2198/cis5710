@@ -596,7 +596,7 @@ module MemorySingleCycle #(
     output logic [`REG_SIZE] insn_from_imem,
 
     // must always be aligned to a 4B boundary
-    input wire [`REG_SIZE] addr_to_dmem,
+    input logic [`REG_SIZE] addr_to_dmem,
 
     // the vadde at memory location addr_to_dmem
     output logic [`REG_SIZE] load_data_from_dmem,
