@@ -387,7 +387,7 @@ module DatapathSingleCycle (
       we = 1'b1;
       halt = 1'b0;
       rd_data = pcCurrent + 4;
-      pcTemp = rs1_data +imm_i_sext - pcCurrent;
+      pcTemp = rs1_data +imm_i_sext + ~pcCurrent + 1;
     end
     if(insn_auipc)
     begin
