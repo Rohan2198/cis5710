@@ -1,6 +1,3 @@
-// Rohan Nagesh ; Pennkey : rnagesh 
-//Harsh Yellai ; PennKey: harshy
-
 `timescale 1ns / 1ps
 
 /**
@@ -29,15 +26,21 @@ module gp4(input wire [3:0] gin, pin,
            output wire gout, pout,
            output wire [2:0] cout);
 
-           assign gout = gin[3] | (pin[3] & gin[2]) | (pin[2] & pin[1] & gin[1]) | (pin[2] & pin[1] & pin [0] & gin[0]) ;
-           assign pout = (&pin);
-           
-           wire [2:0] c; 
-           
-           assign c[0] = gin [0] | pin [0] & cin; 
-           assign c[1] = gin [1] | pin [1] & gin [0] | pin [1] & pin [0] & cin; 
-           assign c[2] = gin[2] | pin[2] & gin[1] | pin[2] & pin[1] & gin[0] | pin[2] & pin[1] & pin[0] & cin;
-           assign cout = c; 
+   assign pout = (& pin[3:0]); 
+   assign gout = gin[3] |
+                  pin[3] & gin[2] |
+                  pin[3] & pin[2] & gin[1] |
+                  pin[3] & pin[2] & pin[1] & gin[0];
+   assign cout[0] = gin[0] |
+                     pin[0] & cin;
+   assign cout[1] = gin[1] |
+                     pin[1] & gin[0] |
+                     pin[1] & pin[0] & cin;
+   assign cout[2] = gin[2] |
+                     pin[2] & gin[1] |
+                     pin[2] &  pin[1] & gin[0] |
+                     pin[2] &  pin[1] & pin[0] & cin;
+
 endmodule
 
 /** Same as gp4 but for an 8-bit window instead */
@@ -46,74 +49,91 @@ module gp8(input wire [7:0] gin, pin,
            output wire gout, pout,
            output wire [6:0] cout);
 
-   // Generate and propagate signals for 8-bit window
-   logic [6:0] cout_store;
-
-   always_comb begin
-      // Compute carry out for each bit
-      assign cout_store[0] = gin[0]|(pin[0] & cin);
-      assign cout_store[1] = gin[1]|(pin[1] & cout_store[0]);
-      assign cout_store[2] = gin[2]|(pin[2] & cout_store[1]);
-      assign cout_store[3] = gin[3]|(pin[3] & cout_store[2]);
-      assign cout_store[4] = gin[4]|(pin[4] & cout_store[3]);
-      assign cout_store[5] = gin[5]|(pin[5] & cout_store[4]);
-      assign cout_store[6] = gin[6]|(pin[6] & cout_store[5]);
-   end
-
-   // Compute generate and propagate signals for the entire 8-bit window
-   assign gout = gin[7] | (pin[7] & cout_store[6]);
-   assign pout = (& pin);
-   assign cout = cout_store;
+   assign pout = (& pin[7:0]);
+   assign gout = gin[7] |
+                  pin[7] & gin[6] |
+                  pin[7] & pin[6] & gin[5] |
+                  pin[7] & pin[6] & pin[5] & gin[4] |
+                  pin[7] & pin[6] & pin[5] & pin[4] & gin[3] |
+                  pin[7] & pin[6] & pin[5] & pin[4] & pin[3] & gin[2] |
+                  pin[7] & pin[6] & pin[5] & pin[4] & pin[3] & pin[2] & gin[1] |
+                  pin[7] & pin[6] & pin[5] & pin[4] & pin[3] & pin[2] & pin[1] & gin[0];
+   assign cout[0] = gin[0] |
+                     pin[0] & cin;
+   assign cout[1] = gin[1] |
+                     pin[1] & gin[0] |
+                     pin[1] & pin[0] & cin;
+   assign cout[2] = gin[2] |
+                     pin[2] & gin[1] |
+                     pin[2] &  pin[1] & gin[0] |
+                     pin[2] &  pin[1] & pin[0] & cin;
+   assign cout[3] = gin[3] |
+                     pin[3] & gin[2] |
+                     pin[3] &  pin[2] & gin[1] |
+                     pin[3] &  pin[2] & pin[1] & gin[0] |
+                     pin[3] &  pin[2] & pin[1] & pin[0] & cin;
+   assign cout[4] = gin[4] |
+                     pin[4] & gin[3] |
+                     pin[4] &  pin[3] & gin[2] |
+                     pin[4] &  pin[3] & pin[2] & gin[1] |
+                     pin[4] &  pin[3] & pin[2] & pin[1] & gin[0] |
+                     pin[4] &  pin[3] & pin[2] & pin[1] & pin[0] & cin;
+   assign cout[5] = gin[5] |
+                     pin[5] & gin[4] |
+                     pin[5] &  pin[4] & gin[3] |
+                     pin[5] &  pin[4] & pin[3] & gin[2] |
+                     pin[5] &  pin[4] & pin[3] & pin[2] & gin[1] |
+                     pin[5] &  pin[4] & pin[3] & pin[2] & pin[1] & gin[0] |
+                     pin[5] &  pin[4] & pin[3] & pin[2] & pin[1] & pin[0] & cin;
+   assign cout[6] = gin[6] |
+                     pin[6] & gin[5] |
+                     pin[6] &  pin[5] & gin[4] |
+                     pin[6] &  pin[5] & pin[4] & gin[3] |
+                     pin[6] &  pin[5] & pin[4] & pin[3] & gin[2] |
+                     pin[6] &  pin[5] & pin[4] & pin[3] & pin[2] & gin[1] |
+                     pin[6] &  pin[5] & pin[4] & pin[3] & pin[2] & pin[1] & gin[0] | 
+                     pin[6] &  pin[5] & pin[4] & pin[3] & pin[2] & pin[1] & pin[0] & cin;  
 
 endmodule
+
 module cla
   (input wire [31:0]  a, b,
    input wire         cin,
    output wire [31:0] sum);
 
-   wire [31:0] gin1 ;
-   wire [31:0] pin1;
+   wire [31:0] g, p, carry;
 
-   // Storage for intermediate sum
-   reg [31:0] compute_sum;
+   wire g31_0; 
+   wire p31_0; 
 
-   // Storage for carry out of each bit
-   wire [30:0] cout;
-   wire [4:0] gout;
-   wire [4:0] pout;
-   
-   // Generate generate/propagate signals for each bit
-   generate
-              for(genvar i = 0; i < 32; i = i +1) begin : gp1_window
-         gp1 gp1_window_( .a(a[i]), .b(b[i]), .g(gin1[i]), .p(pin1[i]));
-      end : gp1_window
-   endgenerate 
+   assign carry[0] = cin; 
 
-   // Calculate generate/propagate signals for 8-bit windows
-   gp8 gp8_w1 (.gin(gin1[7:0]), .pin(pin1[7:0]), .cin(cin), .gout(gout[0]), .pout(pout[0]), .cout(cout[6:0]));
+   wire [3:0] g_grp, p_grp;
+   wire [2:0] car_grp;
 
-   for(genvar k = 1; k < 4; k = k + 1) begin : gp8_w2
-      gp8 gp8_w2 (.gin(gin1[(k+1)*7:k*7]), .pin(pin1[(k+1)*7:k*7]), .cin(cout[(k*7)- 1]), .gout(gout[k]), .pout(pout[k]), .cout(cout[((k+1)*7)-1:k*7]));
-   end : gp8_w2
+   assign carry[24] = car_grp[2]; 
+   assign carry[16] = car_grp[1]; 
+   assign carry[8] = car_grp[0]; 
 
-   // Calculate generate/propagate signals for the last 4 bits
-   gp4 gp8_last (.gin(gin1[31:28]), .pin(pin1[31:28]), .cin(cout[27]), .gout(gout[4]), .pout(pout[4]), .cout(cout[30:28]));
- 
-   // Compute sum based on generate/propagate signals
-   always_comb begin
-      for(integer m = 0; m < 32; m = m + 1) begin : find_sum
+   genvar i;
 
-         if(m == 0) begin : cin_1
-            compute_sum[m] = a[m] ^ b[m] ^ cin;
-         end : cin_1
+   for(i = 0; i < 32; i = i + 1) begin
+      gp1 g_mod(.a(a[i]), .b(b[i]), .g(g[i]), .p(p[i]));
+   end
 
-         else begin : cout_1
-            compute_sum[m] = a[m] ^ b[m] ^ cout[m-1];
-         end : cout_1
-         
-      end : find_sum
-   end   
+    gp8 gp8_1(.gin(g[7:0]), .pin(p[7:0]), .cin(carry[0]), .gout(g_grp[0]), .pout(p_grp[0]), .cout(carry[7:1]));
 
-   assign sum = compute_sum;
+    gp8 gp8_2(.gin(g[15:8]), .pin(p[15:8]), .cin(car_grp[0]), .gout(g_grp[1]), .pout(p_grp[1]), .cout(carry[15:9]));
+
+    gp8 gp8_3(.gin(g[23:16]), .pin(p[23:16]), .cin(car_grp[1]), .gout(g_grp[2]), .pout(p_grp[2]), .cout(carry[23:17]));
+
+    gp8 gp8_4(.gin(g[31:24]), .pin(p[31:24]), .cin(car_grp[2]), .gout(g_grp[3]), .pout(p_grp[3]), .cout(carry[31:25]));
+
+    gp4 gp4_final(.gin(g_grp[3:0]), .pin(p_grp[3:0]), .cin(carry[0]), .gout(g31_0), .pout(p31_0), .cout(car_grp[2:0]));
+
+
+   for(i = 0; i < 32; i = i + 1) begin
+      assign sum[i] =  a[i] ^ b[i] ^ carry[i];
+   end 
 
 endmodule
