@@ -56,6 +56,8 @@ module DatapathSingleCycle (
     output wire [3:0] store_we_to_dmem
 );
 
+  logic [31:0] add_bits;
+
   // components of the instruction
   wire [6:0] insn_funct7;
   wire [4:0] insn_rs2;
@@ -246,7 +248,7 @@ module DatapathSingleCycle (
     store_we_to_dmem = 4'b0000;
 
     if (insn_fence == 1'b1) begin
-      halt = 1'b1;
+      // halt = 1'b1;
       illegal_insn = 1'b0;
       we = 1'b0;
     end
@@ -272,35 +274,47 @@ module DatapathSingleCycle (
       illegal_insn = 1'b0;
       we = 1'b0;
     end
-
-    if (insn_jal == 1'b1) begin
-      we = 1'b1;
-      rd_data = pcCurrent + 32'd4;
-      pcTemp = imm_j_sext;
-      pcNext = pcCurrent + pcTemp;
-      branch = 1'b1;
-    end else if (insn_jalr == 1'b1) begin
-      we = 1'b1;
-      rd_data = pcCurrent + 32'd4;
-      pcTemp = (rs1_data + imm_i_sext) & 32'hFFFFFFFE;
-      pcNext = pcCurrent + pcTemp;
-      branch = 1'b1;
+  
+    else if(OpStore == insn_opcode) begin
+      halt = 1'b0;
+      illegal_insn = 1'b0;
+      add_bits = (rs1_data + imm_s_sext);
+      addr_to_dmem = add_bits & 32'hFFFFFFFC;
+      we = 1'b0;
+      if(insn_sb) begin
+        if(add_bits[1:0] == 2'b00) begin
+          store_data_to_dmem[7:0] = rs2_data[7:0];
+          store_we_to_dmem = 4'b0001;
+        end
+        else if(add_bits[1:0] == 2'b01) begin
+          store_data_to_dmem[15:8] = rs2_data[7:0];
+          store_we_to_dmem = 4'b0010;
+        end
+        else if(add_bits[1:0] == 2'b10) begin
+          store_data_to_dmem[23:16] = rs2_data[7:0];
+          store_we_to_dmem = 4'b0100;
+        end
+        else if(add_bits[1:0] == 2'b11) begin
+          store_data_to_dmem[31:24] = rs2_data[7:0];
+          store_we_to_dmem = 4'b1000;
+        end
+      end
+      else if(insn_sh) begin
+        if(add_bits[1:0] == 2'b00) begin
+          store_data_to_dmem[15:0] = rs2_data[15:0];
+          store_we_to_dmem = 4'b0011;
+        end
+        else if(add_bits[1:0] == 2'b10) begin
+          store_data_to_dmem[31:16] = rs2_data[15:0];
+          store_we_to_dmem = 4'b1100;
+        end
+      end
+      else if(insn_sw) begin
+        store_data_to_dmem = rs2_data;
+        store_we_to_dmem = 4'b1111;
+      end
     end
-
-    if (insn_auipc == 1'b1) begin  
-        we = 1'b1;
-        rd_data = pcCurrent + {insn_from_imem[31:12], 12'd0};
-    end
-
-    if (insn_lb | insn_lh | insn_lbu | insn_lhu | insn_lw) begin
-      addr = (rs1_data + imm_i_sext);
-      addr_to_dmem = (addr) & 32'hFFFF_FFFC;
-    end else if (insn_sb | insn_sw | insn_sh) begin
-      addr = (rs1_data + imm_s_sext);
-      addr_to_dmem = (addr) & 32'hFFFF_FFFC;
-    end
-    
-    if(OpLoad == insn_opcode)
+    else if(OpLoad == insn_opcode)
     begin
       addr = (rs1_data + imm_i_sext);
       addr_to_dmem = (addr)&32'hFFFFFFFC;
@@ -361,47 +375,26 @@ module DatapathSingleCycle (
       end
     end
 
-    if(OpStore == insn_opcode)
+    else if(insn_jal == 1'b1)
     begin
+      we = 1'b1;
       halt = 1'b0;
-      illegal_insn = 1'b0;
-      addr = (rs1_data + imm_s_sext);
-      addr_to_dmem = addr & 32'hFFFFFFFC;
-      we = 1'b0;
-      if(insn_sb) begin
-        if(addr[1:0] == 2'b00) begin
-          store_data_to_dmem[7:0] = rs2_data[7:0];
-          store_we_to_dmem = 4'b0001;
-        end
-        else if(addr[1:0] == 2'b01) begin
-          store_data_to_dmem[15:8] = rs2_data[7:0];
-          store_we_to_dmem = 4'b0010;
-        end
-        else if(addr[1:0] == 2'b10) begin
-          store_data_to_dmem[23:16] = rs2_data[7:0];
-          store_we_to_dmem = 4'b0100;
-        end
-        else if(addr[1:0] == 2'b11) begin
-          store_data_to_dmem[31:24] = rs2_data[7:0];
-          store_we_to_dmem = 4'b1000;
-        end
-      end
-      else if(insn_sh) begin
-        if(addr[1:0] == 2'b00) begin
-          store_data_to_dmem[15:0] = rs2_data[15:0];
-          store_we_to_dmem = 4'b0011;
-        end
-        else if(addr[1:0] == 2'b10) begin
-          store_data_to_dmem[31:16] = rs2_data[15:0];
-          store_we_to_dmem = 4'b1100;
-        end
-      end
-      else if(insn_sw) begin
-        store_data_to_dmem = rs2_data;
-        store_we_to_dmem = 4'b1111;
-      end
+      pcTemp = imm_j_sext;
+      rd_data = pcCurrent + 4;
     end
-
+    if(insn_jalr == 1'b1)
+    begin
+      we = 1'b1;
+      halt = 1'b0;
+      rd_data = pcCurrent + 4;
+      pcTemp = rs1_data +imm_i_sext - pcCurrent;
+    end
+    if(insn_auipc)
+    begin
+      we = 1'b1;
+      halt = 1'b0;
+      rd_data = pcCurrent + {insn_from_imem[31:12],12'd0};
+    end
     case (insn_opcode)
       OpLui : begin
         we = 1'b1;
@@ -546,24 +539,27 @@ module DatapathSingleCycle (
           divisor = rs2_data[31] ? (~rs2_data + 1) : rs2_data;
           rd_data = zero_check ? $signed(32'hFFFFFFFF) : ((rs1 != rs2) ? (~quotient + 1) : quotient); 
         end else if (insn_divu == 1'b1) begin
+          zero_check = (rs1_data == 0) | (rs2_data == 0)  ;
           dividend = $unsigned(rs1_data);
           divisor = $unsigned(rs2_data);
-          rd_data = quotient;
+          rd_data = zero_check ? $signed(32'hFFFFFFFF) : quotient;
         end else if (insn_rem == 1'b1) begin
           rs1 = rs1_data[31];
           rs2 = rs2_data[31];
           zero_check = (rs1_data == 0) | (rs2_data == 0)  ;
           dividend = rs1_data[31] ? (~rs1_data + 1) : rs1_data;
           divisor = rs2_data[31] ? (~rs2_data + 1) : rs2_data;
-          if (!zero_check && (rs1 == 1'b1)) begin
-              rd_data = ~remainder + 1;
-          end else begin
-              rd_data = remainder;
+          if (!zero_check ) begin
+              rd_data = (rs1 == 1'b1)?(~remainder + 1):(remainder);
+          end 
+          else begin
+              rd_data = rs1_data[31] ? (~rs1_data + 1) : rs1_data;
           end
         end else if (insn_remu == 1'b1) begin
           dividend = $unsigned(rs1_data);
           divisor = $unsigned(rs2_data);
-          rd_data = remainder;
+          zero_check = (rs1_data == 0) | (rs2_data == 0)  ;
+          rd_data = (zero_check)?$unsigned(rs1_data):remainder;
         end
 
       end
@@ -668,7 +664,7 @@ prepare register/PC updates, which occur at @posedge clock_proc.
         ____
  proc: |    |______
            ____
- mem:  __|    |__
+ mem:  ___|    |___
 */
 module RiscvProcessor (
     input  wire  clock_proc,
@@ -705,6 +701,6 @@ module RiscvProcessor (
       .store_we_to_dmem(mem_data_we),
       .load_data_from_dmem(mem_data_loaded_vadde),
       .halt(halt)
-  );
+  );
 
 endmodule

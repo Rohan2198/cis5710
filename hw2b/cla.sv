@@ -1,3 +1,6 @@
+// Rohan Nagesh ; Pennkey : rnagesh 
+//Harsh Yellai ; PennKey: harshy
+
 `timescale 1ns / 1ps
 
 /**
@@ -25,56 +28,92 @@ module gp4(input wire [3:0] gin, pin,
            input wire cin,
            output wire gout, pout,
            output wire [2:0] cout);
-           
-           wire [2:0] C;
-   // Compute individual generate and propagate signals for each bit
-   genvar i;
-       for (i = 0; i < 4; i = i + 1) begin 
-                  gp1 inst (.a(gin[i]), .b(pin[i]), .g(g_mid[i]), .p(p_mid[i]));
-       end
 
-   // Compute aggregate generate and propagate signals over the 4-bit window
-           assign gout = g_mid[3] | (p_mid[3] & g_mid[2]) | (p_mid[2] & p_mid[1] & g_mid[1]) | (p_mid[2] & p_mid[1] & p_mid[0] & g_mid[0]) ; 
-           assign pout = &pin;
+           assign gout = gin[3] | (pin[3] & gin[2]) | (pin[2] & pin[1] & gin[1]) | (pin[2] & pin[1] & pin [0] & gin[0]) ;
+           assign pout = (&pin);
+           
            wire [2:0] c; 
+           
            assign c[0] = gin [0] | pin [0] & cin; 
            assign c[1] = gin [1] | pin [1] & gin [0] | pin [1] & pin [0] & cin; 
            assign c[2] = gin[2] | pin[2] & gin[1] | pin[2] & pin[1] & gin[0] | pin[2] & pin[1] & pin[0] & cin;
            assign cout = c; 
 endmodule
 
+/** Same as gp4 but for an 8-bit window instead */
 module gp8(input wire [7:0] gin, pin,
            input wire cin,
            output wire gout, pout,
            output wire [6:0] cout);
 
-   wire [7:0] g_intermediate;
-   wire [7:0] p_intermediate;
+   // Generate and propagate signals for 8-bit window
+   logic [6:0] cout_store;
 
-   // Compute individual generate and propagate signals for each bit
-   genvar i;
-   generate
-       for (i = 0; i < 8; i = i + 1) begin : gen_propagate_loop
-           gp1 gp1_inst (.a(gin[i]), .b(pin[i]), .g(g_intermediate[i]), .p(p_intermediate[i]));
-       end
-   endgenerate
+   always_comb begin
+      // Compute carry out for each bit
+      assign cout_store[0] = gin[0]|(pin[0] & cin);
+      assign cout_store[1] = gin[1]|(pin[1] & cout_store[0]);
+      assign cout_store[2] = gin[2]|(pin[2] & cout_store[1]);
+      assign cout_store[3] = gin[3]|(pin[3] & cout_store[2]);
+      assign cout_store[4] = gin[4]|(pin[4] & cout_store[3]);
+      assign cout_store[5] = gin[5]|(pin[5] & cout_store[4]);
+      assign cout_store[6] = gin[6]|(pin[6] & cout_store[5]);
+   end
 
-   // Compute aggregate generate and propagate signals over the 8-bit window
-   assign gout = |g_intermediate;
-   assign pout = |p_intermediate;
-
-   // Compute carry out for the low-order 7 bits
-   assign cout = {g_intermediate[0] & cin, g_intermediate[1], g_intermediate[2], g_intermediate[3],
-                 g_intermediate[4], g_intermediate[5], g_intermediate[6]};
+   // Compute generate and propagate signals for the entire 8-bit window
+   assign gout = gin[7] | (pin[7] & cout_store[6]);
+   assign pout = (& pin);
+   assign cout = cout_store;
 
 endmodule
-
-
 module cla
   (input wire [31:0]  a, b,
-   input wire cin,
+   input wire         cin,
    output wire [31:0] sum);
 
-   // TODO: your code here
+   wire [31:0] gin1 ;
+   wire [31:0] pin1;
+
+   // Storage for intermediate sum
+   reg [31:0] compute_sum;
+
+   // Storage for carry out of each bit
+   wire [30:0] cout;
+   wire [4:0] gout;
+   wire [4:0] pout;
+   
+   // Generate generate/propagate signals for each bit
+   generate
+              for(genvar i = 0; i < 32; i = i +1) begin : gp1_window
+         gp1 gp1_window_( .a(a[i]), .b(b[i]), .g(gin1[i]), .p(pin1[i]));
+      end : gp1_window
+   endgenerate 
+
+   // Calculate generate/propagate signals for 8-bit windows
+   gp8 gp8_w1 (.gin(gin1[7:0]), .pin(pin1[7:0]), .cin(cin), .gout(gout[0]), .pout(pout[0]), .cout(cout[6:0]));
+
+   for(genvar k = 1; k < 4; k = k + 1) begin : gp8_w2
+      gp8 gp8_w2 (.gin(gin1[(k+1)*7:k*7]), .pin(pin1[(k+1)*7:k*7]), .cin(cout[(k*7)- 1]), .gout(gout[k]), .pout(pout[k]), .cout(cout[((k+1)*7)-1:k*7]));
+   end : gp8_w2
+
+   // Calculate generate/propagate signals for the last 4 bits
+   gp4 gp8_last (.gin(gin1[31:28]), .pin(pin1[31:28]), .cin(cout[27]), .gout(gout[4]), .pout(pout[4]), .cout(cout[30:28]));
+ 
+   // Compute sum based on generate/propagate signals
+   always_comb begin
+      for(integer m = 0; m < 32; m = m + 1) begin : find_sum
+
+         if(m == 0) begin : cin_1
+            compute_sum[m] = a[m] ^ b[m] ^ cin;
+         end : cin_1
+
+         else begin : cout_1
+            compute_sum[m] = a[m] ^ b[m] ^ cout[m-1];
+         end : cout_1
+         
+      end : find_sum
+   end   
+
+   assign sum = compute_sum;
 
 endmodule
