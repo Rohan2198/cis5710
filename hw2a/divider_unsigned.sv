@@ -1,4 +1,4 @@
-/* Rohan Nagesh rnagesh*/
+/* INSERT NAME AND PENNKEY HERE */
 
 `timescale 1ns / 1ns
 
