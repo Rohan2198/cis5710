@@ -145,6 +145,5 @@ module divider_unsigned (
     assign o_remainder = remainder[32];
     assign o_quotient = quotient[32];
 
-endmodule// TODO: copy your code from HW2A here
 
 endmodule
