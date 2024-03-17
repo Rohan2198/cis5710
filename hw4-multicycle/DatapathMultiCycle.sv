@@ -26,7 +26,8 @@ module RegFile (
     input logic we,
     input logic rst
 );
-
+ localparam int NumRegs = 32;
+ logic [`REG_SIZE] regs[NumRegs];
   // TODO: copy your HW3B code here
   assign regs[0] = 32'd0;
   assign rs1_data = regs[rs1];
@@ -78,8 +79,8 @@ module DatapathMultiCycle (
   //instance for divider in datapath
   logic [31:0] dividend, divisor, remainder, quotient;
   logic zero_check, rs1, rs2;
-  divider_unsigned divu(
-    .i_dividend(dividend), .i_divisor(divisor), .o_remainder(remainder), .o_quotient(quotient)
+  divider_unsigned_pipelined divu(
+   .clk(clk), .rst(rst), .i_dividend(dividend), .i_divisor(divisor), .o_remainder(remainder), .o_quotient(quotient)
   );
   // split R-type instruction - see section 2.2 of RiscV spec
   assign {insn_funct7, insn_rs2, insn_rs1, insn_funct3, insn_rd, insn_opcode} = insn_from_imem;
@@ -89,7 +90,7 @@ module DatapathMultiCycle (
   wire [11:0] imm_i;
   assign imm_i = insn_from_imem[31:20];
   wire [ 4:0] imm_shamt = insn_from_imem[24:20];
-
+  logic [2:0] count;
   // S - stores
   wire [11:0] imm_s;
   assign imm_s[11:5] = insn_funct7, imm_s[4:0] = insn_rd;
@@ -181,7 +182,6 @@ module DatapathMultiCycle (
 
   // synthesis translate_off
   // this code is only for simulation, not synthesis
-  `include "RvDisassembler.sv"
   string disasm_string;
   always_comb begin
     disasm_string = rv_disasm(insn_from_imem);
@@ -200,12 +200,14 @@ module DatapathMultiCycle (
     if (rst) begin
       pcCurrent <= 32'd0;
     end else begin
-      if((insn_div == 1'b1)|| (insn_divu == 1'b1) || (insn_rem == 1'b1) || (insn_remu == 1'b1)) begin:abc
+     if((insn_div == 1'b1)|| (insn_divu == 1'b1) || (insn_rem == 1'b1) || (insn_remu == 1'b1)) begin
         count <= count +1 ;
-      if(count == 2) begin : lkj
+       if(count == 2) begin 
         pcCurrent <= pcNext;
-      end else begin : nmb
-       pcCurrent <= pcNext;
+        count <= 0;
+       end
+      end else begin 
+        pcCurrent <= pcNext;
       end
     end
   end
