@@ -90,7 +90,7 @@ module DatapathMultiCycle (
   wire [11:0] imm_i;
   assign imm_i = insn_from_imem[31:20];
   wire [ 4:0] imm_shamt = insn_from_imem[24:20];
-  logic [2:0] count;
+  logic [1:0] count;
   // S - stores
   wire [11:0] imm_s;
   assign imm_s[11:5] = insn_funct7, imm_s[4:0] = insn_rd;
@@ -199,10 +199,11 @@ module DatapathMultiCycle (
   always @(posedge clk) begin
     if (rst) begin
       pcCurrent <= 32'd0;
+      count <= 2'b0;
     end else begin
      if((insn_div == 1'b1)|| (insn_divu == 1'b1) || (insn_rem == 1'b1) || (insn_remu == 1'b1)) begin
         count <= count +1 ;
-       if(count == 2) begin 
+       if(count == 1) begin 
         pcCurrent <= pcNext;
         count <= 0;
        end
